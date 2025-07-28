@@ -171,136 +171,6 @@ A modern Vue 3 + Vite application for managing companies, departments, and emplo
 
 ## 🚀 Comprehensive Setup Instructions
 
-### Prerequisites
-
-Before setting up the application, ensure you have the following installed:
-
-- **Node.js** (v16.0.0 or higher)
-
-  ```bash
-  # Check Node.js version
-  node --version
-  # Should display v16.x.x or higher
-  ```
-
-- **Package Manager** (pnpm recommended, npm/yarn also supported)
-
-  ```bash
-  # Install pnpm globally (recommended)
-  npm install -g pnpm
-
-  # Or use npm (included with Node.js)
-  # Or use yarn
-  npm install -g yarn
-  ```
-
-- **Git** (for cloning the repository)
-  ```bash
-  # Check Git version
-  git --version
-  ```
-
-### Installation Steps
-
-#### Step 1: Clone the Repository
-
-```bash
-# Clone the repository
-git clone <repository-url>
-cd employee-management-sys
-
-# Verify the project structure
-ls -la
-```
-
-**Expected output:**
-
-```
-total 40
-drwxr-xr-x  8 user user 4096 Jan 15 10:00 .
-drwxr-xr-x  3 user user 4096 Jan 15 10:00 ..
--rw-r--r--  1 user user  356 Jan 15 10:00 README.md
--rw-r--r--  1 user user 1234 Jan 15 10:00 package.json
--rw-r--r--  1 user user  567 Jan 15 10:00 vite.config.js
--rw-r--r--  1 user user 2345 Jan 15 10:00 server.js
--rw-r--r--  1 user user 1234 Jan 15 10:00 db.json
-drwxr-xr-x  8 user user 4096 Jan 15 10:00 src
-drwxr-xr-x  4 user user 4096 Jan 15 10:00 public
-```
-
-#### Step 2: Install Dependencies
-
-```bash
-# Install all dependencies
-pnpm install
-
-# Verify installation
-pnpm list --depth=0
-```
-
-**Expected output shows installed packages:**
-
-- vue@3.3.8
-- vite@4.4.11
-- pinia@2.1.7
-- vue-router@4.2.5
-- socket.io-client@4.7.2
-- And other dependencies...
-
-#### Step 3: Start the Backend Server
-
-```bash
-# Terminal 1: Start the mock backend server
-pnpm server
-# or
-node server.js
-```
-
-**Expected output:**
-
-```
-🚀 Backend server running on http://localhost:3001
-📡 WebSocket server initialized
-🗄️  JSON Server running on http://localhost:3001/api
-✅ CORS enabled for all origins
-```
-
-**Backend endpoints available:**
-
-- `GET /api/companies` - List all companies
-- `GET /api/departments` - List all departments
-- `GET /api/employees` - List all employees
-- `POST /api/companies` - Create new company
-- `PUT /api/companies/:id` - Update company
-- `DELETE /api/companies/:id` - Delete company
-- And similar endpoints for departments and employees
-
-#### Step 4: Start the Frontend Development Server
-
-```bash
-# Terminal 2: Start the Vue.js frontend
-pnpm dev
-```
-
-**Expected output:**
-
-```
-  VITE v4.4.11  ready in 234 ms
-
-  ➜  Local:   http://localhost:5173/
-  ➜  Network: use --host to expose
-  ➜  press h to show help
-```
-
-**Frontend runs on:** http://localhost:5173 (or 5174 if 5173 is busy)
-
-#### Step 5: Access the Application
-
-1. Open your web browser
-2. Navigate to: **http://localhost:5173**
-3. You should see the login page with a modern UI
-
-### Alternative Setup Methods
 
 #### Option 1: Easy Start Scripts (Recommended)
 
@@ -319,29 +189,6 @@ start.bat
 # Build and run with Docker
 docker-compose up --build
 ```
-
-### Verification Steps
-
-After setup, verify the application is working correctly:
-
-1. **Backend Verification:**
-
-   ```bash
-   # Test backend API
-   curl http://localhost:3001/api/companies
-   # Should return JSON array of companies
-   ```
-
-2. **Frontend Verification:**
-
-   - Open http://localhost:5173
-   - Should see login page
-   - Try logging in with demo credentials
-
-3. **Real-time Features:**
-   - Open multiple browser tabs
-   - Make changes in one tab
-   - Verify updates appear in other tabs
 
 ---
 
@@ -521,7 +368,7 @@ The application is fully responsive and works on:
 
 ## 📁 Project Structure
 
-```
+```css
 employee-management-sys/
 ├── src/
 │   ├── components/          # Reusable Vue components
