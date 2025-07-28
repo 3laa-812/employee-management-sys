@@ -518,41 +518,10 @@ The application is fully responsive and works on:
 - 💻 **Desktop** (1024px+)
 - 🖥️ **Large Screens** (1200px+)
 
----
-
-## 🔧 Development Commands
-
-```bash
-# Install dependencies
-pnpm install
-
-# Start development server
-pnpm dev
-
-# Start backend server
-pnpm server
-
-# Build for production
-pnpm build
-
-# Preview production build
-pnpm preview
-
-# Run tests (if available)
-pnpm test
-
-# Lint code
-pnpm lint
-
-# Format code
-pnpm format
-```
-
----
 
 ## 📁 Project Structure
 
-```css
+```
 employee-management-sys/
 ├── src/
 │   ├── components/          # Reusable Vue components
@@ -617,57 +586,6 @@ The application uses a custom color palette that can be modified in `src/style.c
 3. Create stores in `src/stores/`
 4. Update router in `src/router/index.js`
 
----
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-**Port already in use:**
-
-```bash
-# Kill process on port 5173
-lsof -ti:5173 | xargs kill -9
-# or use different port
-pnpm dev --port 3000
-```
-
-**Backend not connecting:**
-
-- Ensure `node server.js` is running on port 3001
-- Check browser console for connection errors
-- Verify CORS settings in `server.js`
-
-**Theme not working:**
-
-- Clear browser cache
-- Check if CSS variables are loaded
-- Verify `src/style.css` is imported in `main.js`
-
-**Real-time updates not working:**
-
-- Check WebSocket connection in browser dev tools
-- Verify Socket.io server is running
-- Check network tab for connection errors
-
-**Dependencies not installing:**
-
-```bash
-# Clear cache and reinstall
-rm -rf node_modules package-lock.json
-pnpm install
-```
-
-**Build errors:**
-
-```bash
-# Check for syntax errors
-pnpm lint
-# Fix formatting issues
-pnpm format
-```
-
----
 
 ## 📈 Performance Features
 
