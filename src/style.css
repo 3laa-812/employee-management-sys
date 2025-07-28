@@ -7,10 +7,18 @@
   color: rgba(255, 255, 255, 0.87);
   background-color: #242424;
 
+  --bg: #ffffff;
+  --text: #222;
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+[data-theme="dark"] {
+  --bg: #1e1e1e;
+  --text: #f0f0f0;
 }
 
 a {
@@ -28,6 +36,9 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--bg);
+  color: var(--text);
+  transition: 0.3s;
 }
 
 h1 {
@@ -43,15 +54,20 @@ button {
   font-weight: 500;
   font-family: inherit;
   background-color: #1a1a1a;
+  color: #fff;
   cursor: pointer;
-  transition: border-color 0.25s;
+  transition: border-color 0.25s, background-color 0.25s, color 0.25s;
 }
 button:hover {
   border-color: #646cff;
+  background-color: #333399;
+  color: #fff;
 }
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+  background-color: #222266;
+  color: #fff;
 }
 
 .card {
@@ -74,6 +90,16 @@ button:focus-visible {
     color: #747bff;
   }
   button {
-    background-color: #f9f9f9;
+    background-color: #213547;
+    color: #fff;
+  }
+  button:hover {
+    background-color: #3a5ad7;
+    color: #fff;
+  }
+  button:focus,
+  button:focus-visible {
+    background-color: #2a3a77;
+    color: #fff;
   }
 }

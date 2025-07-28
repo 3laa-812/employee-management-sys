@@ -1,22 +1,36 @@
 <!-- src/components/NotificationBell.vue -->
 <template>
   <div class="relative">
-    <button @click="toggleDropdown" class="bell-btn">
+    <button
+      @click="toggleDropdown"
+      class="bell-btn"
+      aria-label="Open notifications"
+      aria-haspopup="menu"
+      :aria-expanded="showDropdown.toString()"
+    >
       🔔
       <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
     </button>
 
-    <div v-if="showDropdown" class="dropdown">
+    <div
+      v-if="showDropdown"
+      class="dropdown"
+      role="menu"
+      aria-label="Notifications"
+    >
       <div class="dropdown-header">
         <span>Notifications</span>
         <button @click="markAllRead" class="mark-all-btn">Mark All Read</button>
       </div>
-      <ul class="notification-list">
+      <ul class="notification-list" role="list">
         <li
           v-for="n in notifications"
           :key="n.id"
           :class="{ unread: !n.read, [`type-${n.type}`]: true }"
           @click="markAsRead(n.id)"
+          role="listitem"
+          :tabindex="0"
+          @keydown="onNotificationKeyDown($event, n.id)"
         >
           <div class="notification-content">
             <div class="notification-message">{{ n.message }}</div>
@@ -67,6 +81,28 @@ function formatTime(iso) {
   if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
   return d.toLocaleDateString();
+}
+
+function onNotificationKeyDown(e, id) {
+  if (e.key === "Enter" || e.key === " ") {
+    markAsRead(id);
+    e.preventDefault();
+  } else if (e.key === "ArrowDown") {
+    let next = e.target.nextElementSibling;
+    while (next && next.getAttribute("role") !== "listitem")
+      next = next.nextElementSibling;
+    if (next) next.focus();
+    e.preventDefault();
+  } else if (e.key === "ArrowUp") {
+    let prev = e.target.previousElementSibling;
+    while (prev && prev.getAttribute("role") !== "listitem")
+      prev = prev.previousElementSibling;
+    if (prev) prev.focus();
+    e.preventDefault();
+  } else if (e.key === "Escape") {
+    showDropdown.value = false;
+    e.preventDefault();
+  }
 }
 
 // Close dropdown when clicking outside

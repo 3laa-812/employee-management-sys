@@ -6,8 +6,7 @@
     </div>
   </header>
   <div>
-    <h1>Welcome, {{ auth.user?.name }}</h1>
-
+    <h1>{{$t('Welcome')}}, {{ auth.user?.name }}</h1>
     <div class="nav-buttons">
       <h3>Activity Feed</h3>
       <ul>

@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import axios from "axios";
+import { saveToCache, getFromCache } from "../utils/db";
 
 const API = "http://localhost:3001/departments";
 
@@ -9,8 +10,19 @@ export const useDepartmentStore = defineStore("department", () => {
   let eventSource = null;
 
   const fetchDepartments = async () => {
-    const response = await axios.get(`${API}?_sort=order`);
-    departments.value = response.data;
+    try {
+      const response = await axios.get(`${API}?_sort=order`);
+      departments.value = response.data;
+      await saveToCache("departments", response.data);
+    } catch (error) {
+      console.error("Error fetching departments:", error);
+      // Try to load from cache
+      const cached = await getFromCache("departments");
+      if (cached && cached.length) {
+        departments.value = cached;
+        console.log("Loaded departments from cache");
+      }
+    }
   };
 
   const startRealTimeUpdates = () => {

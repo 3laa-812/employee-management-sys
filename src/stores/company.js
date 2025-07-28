@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import axios from "axios";
+import { saveToCache, getFromCache } from "../utils/db";
 
 export const useCompanyStore = defineStore("company", () => {
   const API = "http://localhost:3001/companies";
@@ -11,8 +12,15 @@ export const useCompanyStore = defineStore("company", () => {
     try {
       const response = await axios.get(API);
       companies.value = response.data;
+      await saveToCache("companies", response.data);
     } catch (error) {
       console.error("Error fetching companies:", error);
+      // Try to load from cache
+      const cached = await getFromCache("companies");
+      if (cached && cached.length) {
+        companies.value = cached;
+        console.log("Loaded companies from cache");
+      }
     }
   };
 
