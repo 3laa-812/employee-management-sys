@@ -1,0 +1,139 @@
+{
+  "companies": [
+    {
+      "id": "1",
+      "name": "Company A",
+      "code": "A001",
+      "parentId": null
+    },
+    {
+      "id": "2",
+      "name": "Company B",
+      "code": "B002",
+      "parentId": null
+    },
+    {
+      "id": "3",
+      "name": "Company C",
+      "code": "C003",
+      "parentId": null
+    },
+    {
+      "id": "b8a1",
+      "name": "COM AA",
+      "code": "A001",
+      "parentId": "1"
+    },
+    {
+      "id": "f8d2",
+      "name": "COM BB",
+      "code": "B01",
+      "parentId": "b8a1"
+    },
+    {
+      "id": "test1",
+      "name": "test company",
+      "code": "003",
+      "parentId": null
+    },
+    {
+      "id": "test2",
+      "name": "test com",
+      "code": "000",
+      "parentId": "b8a1"
+    },
+    {
+      "id": "test3",
+      "name": "teest",
+      "code": "001",
+      "parentId": "b8a1",
+      "address": "tt"
+    },
+    {
+      "id": "test6",
+      "name": "last",
+      "code": "12",
+      "parentId": "2",
+      "address": "2wds"
+    }
+  ],
+  "departments": [
+    {
+      "id": "1",
+      "name": "HR",
+      "companyId": "3",
+      "headId": "3",
+      "order": 3
+    },
+    {
+      "id": "2",
+      "name": "Engineering",
+      "companyId": "2",
+      "headId": "4",
+      "order": 2
+    },
+    {
+      "id": "3",
+      "name": "Marketing",
+      "companyId": "3",
+      "headId": "2",
+      "order": 1
+    }
+  ],
+  "employees": [
+    {
+      "id": "1",
+      "name": "Ahmed Ali",
+      "email": "ahmed@site.com",
+      "departmentId": "1",
+      "role": "Manager",
+      "status": "Suspended",
+      "hireDate": "2023-01-15"
+    },
+    {
+      "id": "2",
+      "name": "Sara Mahmoud",
+      "email": "sara@site.com",
+      "departmentId": "1",
+      "role": "Officer",
+      "status": "Suspended",
+      "hireDate": "2022-11-05"
+    },
+    {
+      "id": "3",
+      "name": "Omar Khaled",
+      "email": "omar@site.com",
+      "departmentId": "3",
+      "role": "Marketing Specialist",
+      "status": "Active",
+      "hireDate": "2021-06-20"
+    },
+    {
+      "id": "4",
+      "name": "Mona Said",
+      "email": "mona@site.com",
+      "departmentId": "1",
+      "role": "HR Manager",
+      "status": "On Leave",
+      "hireDate": "2022-08-10"
+    },
+    {
+      "id": "5",
+      "name": "Ali Hassan",
+      "email": "ali@site.com",
+      "departmentId": "2",
+      "role": "Engineer",
+      "status": "Active",
+      "hireDate": "2023-03-10"
+    },
+    {
+      "id": "6",
+      "name": "Alaa",
+      "email": "al@admin.com",
+      "role": "SDE",
+      "departmentId": "2",
+      "status": "Active",
+      "hireDate": "2025-07-27"
+    }
+  ]
+}
