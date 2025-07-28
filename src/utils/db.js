@@ -1,9 +1,14 @@
 import { openDB } from "idb";
 
-export const db = await openDB("ems-db", 1, {
-  upgrade(db) {
-    db.createObjectStore("companies", { keyPath: "id" });
-    db.createObjectStore("departments", { keyPath: "id" });
+export const db = await openDB("ems-db", 2, {
+  upgrade(db, oldVersion) {
+    if (oldVersion < 1) {
+      db.createObjectStore("companies", { keyPath: "id" });
+      db.createObjectStore("departments", { keyPath: "id" });
+    }
+    if (oldVersion < 2) {
+      db.createObjectStore("employees", { keyPath: "id" });
+    }
   },
 });
 

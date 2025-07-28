@@ -4,6 +4,8 @@ import Dashboard from "../pages/Dashboard.vue";
 import Companies from "../pages/Companies.vue";
 import Departments from "../pages/Departments.vue";
 import Employees from "../pages/Employees.vue";
+import Reports from "../pages/Reports.vue";
+import Admin from "../pages/Admin.vue";
 import { useAuthStore } from "../stores/auth";
 import EmployeeWizard from "../pages/EmployeeWizard.vue";
 import EmployeeTimeline from "../pages/EmployeeTimeline.vue";
@@ -35,6 +37,16 @@ const routes = [
         path: "employees",
         component: Employees,
         meta: { roles: ["admin", "manager", "employee"] },
+      },
+      {
+        path: "reports",
+        component: Reports,
+        meta: { roles: ["admin", "manager"] },
+      },
+      {
+        path: "admin",
+        component: Admin,
+        meta: { roles: ["admin"] },
       },
       { path: "employees/:id/timeline", component: EmployeeTimeline },
       {

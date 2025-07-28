@@ -7,13 +7,13 @@ export const useThemeStore = defineStore("theme", () => {
 
   function toggleTheme() {
     currentTheme.value = currentTheme.value === "light" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", currentTheme.value);
-    localStorage.setItem("theme", currentTheme.value);
+    applyTheme();
   }
 
-  // at the start, apply the theme based on the stored value
+  // Apply the theme based on the stored value
   function applyTheme() {
     document.documentElement.setAttribute("data-theme", currentTheme.value);
+    localStorage.setItem("theme", currentTheme.value);
   }
 
   return { currentTheme, toggleTheme, applyTheme };

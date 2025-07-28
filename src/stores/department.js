@@ -97,6 +97,15 @@ export const useDepartmentStore = defineStore("department", () => {
     // Real-time update will be handled by SSE
   };
 
+  // Add this function to allow manual cache loading for offline mode
+  const loadDepartmentsFromCache = async () => {
+    const cached = await getFromCache("departments");
+    if (cached && cached.length) {
+      departments.value = cached;
+      console.log("Loaded departments from cache (manual trigger)");
+    }
+  };
+
   return {
     departments,
     fetchDepartments,
@@ -106,5 +115,6 @@ export const useDepartmentStore = defineStore("department", () => {
     bulkUpdateCompany,
     startRealTimeUpdates,
     stopRealTimeUpdates,
+    loadDepartmentsFromCache, // expose for UI
   };
 });

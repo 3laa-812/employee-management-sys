@@ -101,7 +101,7 @@ function onChildDrop({ draggedId, newParentId }) {
 
 <style scoped>
 .drop-target > div {
-  outline: 2px solid #333399;
-  background: #e0e7ff;
+  outline: 2px solid #456882;
+  background: rgba(69, 104, 130, 0.1);
 }
 </style>

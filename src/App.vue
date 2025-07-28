@@ -1,54 +1,102 @@
 <template>
   <div id="app">
-    <div>
-      <select v-model="locale" @change="switchLang">
-        <option value="en">English</option>
-        <option value="ar">العربية</option>
-      </select>
-    </div>
+    <!-- Header -->
+    <header class="header">
+      <div class="container">
+        <div class="header-content">
+          <div class="title">
+            <router-link to="/dashboard"
+              >Employee Management System</router-link
+            >
+          </div>
 
-    <button @click="themeStore.toggleTheme">
-      Toggle Theme: {{ themeStore.currentTheme }}
-    </button>
-    <router-view />
+          <div class="controls">
+            <select v-model="locale" class="select">
+              <option value="en">English</option>
+              <option value="ar">العربية</option>
+            </select>
+
+            <button @click="toggleTheme" class="btn btn-secondary">
+              {{ themeStore.currentTheme === "light" ? "🌙" : "☀️" }}
+              <span class="hide-mobile">
+                {{ themeStore.currentTheme === "light" ? "Dark" : "Light" }}
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+      <div class="container">
+        <router-view />
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <div class="container">
+        <p class="text-center">© {{ new Date().getFullYear() }} Employee Management System</p>
+      </div>
+    </footer>
   </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, watch } from "vue";
+import { onMounted, watch } from "vue";
 import socket from "./socket";
 import { useNotificationStore } from "./stores/notificationStore";
 import { useThemeStore } from "./stores/theme";
 import { useI18n } from "vue-i18n";
 
 const { locale } = useI18n();
-let socketConnected = false;
 const themeStore = useThemeStore();
+const notificationStore = useNotificationStore();
 
-// Watch for locale changes and update direction
+// Watch for locale changes
 watch(locale, () => {
   applyDirection();
   localStorage.setItem("locale", locale.value);
 });
 
-// Load locale from localStorage on mount
+// Load saved settings on mount
 onMounted(() => {
   const savedLocale = localStorage.getItem("locale");
-  if (savedLocale && savedLocale !== locale.value) {
+  if (savedLocale) {
     locale.value = savedLocale;
   }
+
   applyDirection();
   themeStore.applyTheme();
 
-  const notificationStore = useNotificationStore();
+  // Set up socket notifications
+  setupSocketNotifications();
+});
 
+function switchLang() {
+  // Handled by watcher
+}
+
+function toggleTheme() {
+  themeStore.toggleTheme();
+}
+
+function applyDirection() {
+  if (locale.value === "ar") {
+    document.documentElement.setAttribute("dir", "rtl");
+  } else {
+    document.documentElement.setAttribute("dir", "ltr");
+  }
+}
+
+function setupSocketNotifications() {
   // Listen for notifications from server
   socket.on("notification", (data) => {
-    console.log("📨 Received notification:", data);
     notificationStore.addNotification(data.message, data.type || "info");
   });
 
-  // Listen for specific event notifications
+  // Listen for specific events
   socket.on("company_created", (data) => {
     notificationStore.addNotification(
       `New company "${data.name}" created`,
@@ -57,7 +105,7 @@ onMounted(() => {
   });
 
   socket.on("company_updated", (data) => {
-    notificationStore.addNotification(`Company "${data.name}" updated", "info`);
+    notificationStore.addNotification(`Company "${data.name}" updated`, "info");
   });
 
   socket.on("company_deleted", (data) => {
@@ -83,74 +131,132 @@ onMounted(() => {
 
   // Connection status
   socket.on("connect", () => {
-    socketConnected = true;
-    console.log("✅ Socket connected - notifications enabled");
+    console.log("✅ Socket connected");
   });
 
   socket.on("disconnect", () => {
-    socketConnected = false;
-    console.log("❌ Socket disconnected - notifications disabled");
+    console.log("❌ Socket disconnected");
   });
 
   socket.on("connect_error", () => {
-    socketConnected = false;
-    console.log("⚠️ Socket connection failed - using fallback notifications");
-
-    // Add a fallback notification
+    console.log("⚠️ Socket connection failed");
     notificationStore.addNotification(
-      "Real-time notifications are currently unavailable. You can still use the test buttons.",
+      "Real-time notifications are currently unavailable.",
       "warning"
     );
   });
-});
-
-onUnmounted(() => {
-  // Clean up socket listeners if needed
-  socket.off("notification");
-  socket.off("company_created");
-  socket.off("company_updated");
-  socket.off("company_deleted");
-  socket.off("department_created");
-  socket.off("employee_created");
-});
-
-// Optional: keep for manual change, but not strictly needed with watcher
-function switchLang() {
-  // No need to set localStorage or call applyDirection here anymore
-}
-
-function applyDirection() {
-  if (locale.value === "ar") {
-    document.documentElement.setAttribute("dir", "rtl");
-  } else {
-    document.documentElement.setAttribute("dir", "ltr");
-  }
 }
 </script>
 
-<style>
-body {
-  font-family: sans-serif;
-  margin: 0;
-  padding: 0;
-}
-
-/* Light theme (default) */
-:root {
-  --bg-color: #fff;
-  --text-color: #222;
-}
-
-/* Dark theme */
-[data-theme="dark"] {
-  --bg-color: #181818;
-  --text-color: #f1f1f1;
-}
-
+<style scoped>
 #app {
-  background: var(--bg-color);
-  color: var(--text-color);
   min-height: 100vh;
-  transition: background 0.3s, color 0.3s;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  background-color: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 0;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.title a {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.title a:hover {
+  color: #456882;
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.select {
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.875rem;
+}
+
+.main {
+  flex: 1;
+  padding: 2rem 0;
+}
+
+.footer {
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  padding: 1rem 0;
+  margin-top: auto;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.hide-mobile {
+  display: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+
+  .title {
+    font-size: 1.25rem;
+    text-align: center;
+  }
+
+  .controls {
+    justify-content: center;
+  }
+}
+
+@media (min-width: 768px) {
+  .hide-mobile {
+    display: inline;
+  }
+}
+
+/* Focus styles */
+.select:focus,
+.btn:focus {
+  outline: 2px solid #456882;
+  outline-offset: 2px;
+}
+
+/* Transitions */
+.header,
+.main,
+.footer {
+  transition: background-color 0.3s, border-color 0.3s;
 }
 </style>

@@ -65,7 +65,8 @@ function goBack() {
 }
 .timeline li {
   margin-bottom: 1rem;
-  border-left: 3px solid #007bff;
+  border-left: 3px solid #456882;
   padding-left: 1rem;
+  color: var(--text-primary);
 }
 </style>

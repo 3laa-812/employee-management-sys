@@ -1,117 +1,96 @@
 <!-- src/components/NotificationBell.vue -->
 <template>
-  <div class="relative">
+  <div class="notification-bell">
     <button
       @click="toggleDropdown"
       class="bell-btn"
       aria-label="Open notifications"
-      aria-haspopup="menu"
       :aria-expanded="showDropdown.toString()"
     >
       🔔
-      <span v-if="unreadCount > 0" class="badge">{{ unreadCount }}</span>
+      <span v-if="unreadCount > 0" class="badge">
+        {{ unreadCount > 99 ? "99+" : unreadCount }}
+      </span>
     </button>
 
-    <div
-      v-if="showDropdown"
-      class="dropdown"
-      role="menu"
-      aria-label="Notifications"
-    >
+    <div v-if="showDropdown" class="dropdown" role="menu">
       <div class="dropdown-header">
-        <span>Notifications</span>
-        <button @click="markAllRead" class="mark-all-btn">Mark All Read</button>
-      </div>
-      <ul class="notification-list" role="list">
-        <li
-          v-for="n in notifications"
-          :key="n.id"
-          :class="{ unread: !n.read, [`type-${n.type}`]: true }"
-          @click="markAsRead(n.id)"
-          role="listitem"
-          :tabindex="0"
-          @keydown="onNotificationKeyDown($event, n.id)"
+        <h3>Notifications</h3>
+        <button
+          @click="markAllRead"
+          class="mark-all-btn"
+          :disabled="unreadCount === 0"
         >
-          <div class="notification-content">
-            <div class="notification-message">{{ n.message }}</div>
-            <small class="notification-time">{{
-              formatTime(n.createdAt)
-            }}</small>
-          </div>
-          <button
-            @click.stop="removeNotification(n.id)"
-            class="remove-btn"
-            title="Remove notification"
+          Mark All Read
+        </button>
+      </div>
+
+      <div class="dropdown-body">
+        <ul class="notification-list">
+          <li
+            v-for="n in notifications"
+            :key="n.id"
+            :class="{ unread: !n.read }"
+            @click="markAsRead(n.id)"
+            class="notification-item"
           >
-            ×
-          </button>
-        </li>
-        <li v-if="notifications.length === 0" class="empty-state">
-          No notifications
-        </li>
-      </ul>
+            <div class="notification-content">
+              <div class="notification-message">{{ n.message }}</div>
+              <div class="notification-time">{{ formatTime(n.timestamp) }}</div>
+            </div>
+            <button
+              @click.stop="removeNotification(n.id)"
+              class="remove-btn"
+              title="Remove notification"
+            >
+              ×
+            </button>
+          </li>
+          <li v-if="notifications.length === 0" class="empty-state">
+            <p>No notifications</p>
+            <small>You're all caught up!</small>
+          </li>
+        </ul>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useNotificationStore } from "../stores/notificationStore";
 
-const showDropdown = ref(false);
 const notificationStore = useNotificationStore();
-const {
-  notifications,
-  unreadCount,
-  markAllRead,
-  markAsRead,
-  removeNotification,
-} = notificationStore;
+const showDropdown = ref(false);
+
+const notifications = computed(() => notificationStore.notifications);
+const unreadCount = computed(() => notificationStore.unreadCount);
 
 function toggleDropdown() {
   showDropdown.value = !showDropdown.value;
 }
 
-function formatTime(iso) {
-  const d = new Date(iso);
-  const now = new Date();
-  const diff = now - d;
+function markAsRead(id) {
+  notificationStore.markAsRead(id);
+}
 
-  if (diff < 60000) return "Just now";
-  if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+function markAllRead() {
+  notificationStore.markAllRead();
+}
+
+function removeNotification(id) {
+  notificationStore.removeNotification(id);
+}
+
+function formatTime(timestamp) {
+  const d = new Date(timestamp);
+  if (d.toDateString() === new Date().toDateString()) {
+    return d.toLocaleTimeString();
+  }
   return d.toLocaleDateString();
 }
 
-function onNotificationKeyDown(e, id) {
-  if (e.key === "Enter" || e.key === " ") {
-    markAsRead(id);
-    e.preventDefault();
-  } else if (e.key === "ArrowDown") {
-    let next = e.target.nextElementSibling;
-    while (next && next.getAttribute("role") !== "listitem")
-      next = next.nextElementSibling;
-    if (next) next.focus();
-    e.preventDefault();
-  } else if (e.key === "ArrowUp") {
-    let prev = e.target.previousElementSibling;
-    while (prev && prev.getAttribute("role") !== "listitem")
-      prev = prev.previousElementSibling;
-    if (prev) prev.focus();
-    e.preventDefault();
-  } else if (e.key === "Escape") {
-    showDropdown.value = false;
-    e.preventDefault();
-  }
-}
-
 // Close dropdown when clicking outside
-function handleClickOutside(event) {
-  if (!event.target.closest(".relative")) {
-    showDropdown.value = false;
-  }
-}
-
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
 });
@@ -119,85 +98,126 @@ onMounted(() => {
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
 });
+
+function handleClickOutside(event) {
+  if (!event.target.closest(".notification-bell")) {
+    showDropdown.value = false;
+  }
+}
 </script>
 
 <style scoped>
-.bell-btn {
+.notification-bell {
   position: relative;
-  font-size: 1.5rem;
+}
+
+.bell-btn {
   background: none;
   border: none;
   cursor: pointer;
-  padding: 8px;
+  padding: 0.5rem;
   border-radius: 50%;
-  transition: background-color 0.2s;
+  transition: all 0.2s;
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
 }
 
 .bell-btn:hover {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--bg-secondary);
+}
+
+.bell-btn:focus {
+  outline: 2px solid #456882;
+  outline-offset: 2px;
 }
 
 .badge {
   position: absolute;
-  top: -6px;
-  right: -6px;
-  background: #ff4757;
-  color: white;
+  top: 0;
+  right: 0;
+  background-color: #dc3545;
+  color: var(--text-primary);
   border-radius: 50%;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   padding: 2px 6px;
   min-width: 18px;
-  text-align: center;
-  font-weight: bold;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
 }
 
 .dropdown {
   position: absolute;
-  top: 2.5rem;
+  top: calc(100% + 0.5rem);
   right: 0;
-  background: white;
-  border: 1px solid #e1e8ed;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
   border-radius: 8px;
   width: 320px;
   max-height: 400px;
-  overflow-y: auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(27, 60, 83, 0.1);
   z-index: 1000;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dropdown-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e1e8ed;
-  background: #f8f9fa;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
   border-radius: 8px 8px 0 0;
 }
 
-.mark-all-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-
-.mark-all-btn:hover {
-  background: #0056b3;
-}
-
-.notification-list {
-  list-style: none;
+.dropdown-header h3 {
   margin: 0;
-  padding: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-.notification-list li {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f1f3f4;
+.mark-all-btn {
+  background-color: #456882;
+  color: var(--text-primary);
+  border: none;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mark-all-btn:hover:not(:disabled) {
+  background-color: #1b3c53;
+}
+
+.mark-all-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.notification-item {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
@@ -205,76 +225,137 @@ onUnmounted(() => {
   transition: background-color 0.2s;
 }
 
-.notification-list li:hover {
-  background-color: #f8f9fa;
+.notification-item:hover {
+  background-color: var(--bg-secondary);
 }
 
-.notification-list li:last-child {
+.notification-item:last-child {
   border-bottom: none;
 }
 
 .notification-content {
   flex: 1;
+  margin-right: 0.5rem;
 }
 
 .notification-message {
-  margin-bottom: 4px;
+  margin-bottom: 0.25rem;
   line-height: 1.4;
+  color: var(--text-primary);
+  font-size: 0.875rem;
 }
 
 .notification-time {
-  color: #6c757d;
+  color: var(--text-muted);
   font-size: 0.75rem;
 }
 
-.unread {
-  background-color: #f0f8ff;
-  font-weight: 500;
-}
-
-.unread:hover {
-  background-color: #e6f3ff;
-}
-
-.type-success {
-  border-left: 4px solid #28a745;
-}
-
-.type-warning {
-  border-left: 4px solid #ffc107;
-}
-
-.type-error {
-  border-left: 4px solid #dc3545;
-}
-
-.type-info {
-  border-left: 4px solid #17a2b8;
+.notification-item.unread {
+  background-color: rgba(69, 104, 130, 0.1);
 }
 
 .remove-btn {
   background: none;
   border: none;
-  color: #6c757d;
-  font-size: 1.2rem;
+  color: var(--text-muted);
+  font-size: 1.125rem;
   cursor: pointer;
   padding: 0;
-  margin-left: 8px;
+  margin-left: 0.25rem;
   line-height: 1;
+  border-radius: 4px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
 }
 
 .remove-btn:hover {
-  color: #dc3545;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
 }
 
 .empty-state {
   text-align: center;
-  color: #6c757d;
-  font-style: italic;
+  color: var(--text-muted);
   cursor: default;
+  padding: 2rem;
 }
 
 .empty-state:hover {
   background-color: transparent;
+}
+
+.empty-state p {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+}
+
+.empty-state small {
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .dropdown {
+    position: fixed;
+    top: 60px;
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+    max-width: none;
+  }
+
+  .dropdown-header {
+    padding: 0.75rem 1rem;
+  }
+
+  .dropdown-header h3 {
+    font-size: 1rem;
+  }
+
+  .notification-item {
+    padding: 0.75rem 1rem;
+  }
+
+  .notification-message {
+    font-size: 0.75rem;
+  }
+
+  .notification-time {
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .bell-btn {
+    padding: 0.25rem;
+    min-height: 40px;
+    min-width: 40px;
+    font-size: 1.125rem;
+  }
+
+  .badge {
+    font-size: 0.625rem;
+    padding: 1px 4px;
+    min-width: 16px;
+  }
+}
+
+/* Focus styles */
+.notification-item:focus {
+  outline: 2px solid #456882;
+  outline-offset: -2px;
+}
+
+/* Transitions */
+.bell-btn,
+.dropdown,
+.notification-item,
+.remove-btn {
+  transition: all 0.2s;
 }
 </style>

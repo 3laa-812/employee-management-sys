@@ -4,19 +4,13 @@
       "id": "1",
       "name": "Company A",
       "code": "A001",
-      "parentId": null
+      "parentId": "b8a1"
     },
     {
       "id": "2",
       "name": "Company B",
       "code": "B002",
       "parentId": null
-    },
-    {
-      "id": "3",
-      "name": "Company C",
-      "code": "C003",
-      "parentId": "2"
     },
     {
       "id": "b8a1",
@@ -34,50 +28,36 @@
       "id": "test1",
       "name": "test company",
       "code": "003",
-      "parentId": "f8d2"
+      "parentId": null
     },
     {
       "id": "test2",
       "name": "test com",
       "code": "000",
-      "parentId": "b8a1"
-    },
-    {
-      "id": "test3",
-      "name": "teest",
-      "code": "001",
-      "parentId": "b8a1",
-      "address": "tt"
-    },
-    {
-      "id": "test6",
-      "name": "last",
-      "code": "12",
-      "parentId": "2",
-      "address": "2wds"
+      "parentId": null
     }
   ],
   "departments": [
     {
       "id": "1",
       "name": "HR",
-      "companyId": "3",
+      "companyId": "f8d2",
       "headId": "3",
-      "order": 2
+      "order": 1
     },
     {
       "id": "2",
       "name": "Engineering",
       "companyId": "2",
       "headId": "4",
-      "order": 3
+      "order": 2
     },
     {
       "id": "3",
       "name": "Marketing",
-      "companyId": "3",
+      "companyId": "test1",
       "headId": "2",
-      "order": 1
+      "order": 3
     }
   ],
   "employees": [

@@ -172,6 +172,15 @@ export const useCompanyStore = defineStore("company", () => {
     }
   };
 
+  // Add this function to allow manual cache loading for offline mode
+  const loadCompaniesFromCache = async () => {
+    const cached = await getFromCache("companies");
+    if (cached && cached.length) {
+      companies.value = cached;
+      console.log("Loaded companies from cache (manual trigger)");
+    }
+  };
+
   return {
     companies,
     fetchCompanies,
@@ -181,5 +190,6 @@ export const useCompanyStore = defineStore("company", () => {
     bulkDelete,
     startRealTimeUpdates,
     stopRealTimeUpdates,
+    loadCompaniesFromCache, // expose for UI
   };
 });

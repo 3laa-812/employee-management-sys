@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
 import axios from "axios";
+import { saveToCache, getFromCache } from "../utils/db";
 
 const API = "http://localhost:3001/employees";
 
@@ -9,8 +10,19 @@ export const useEmployeeStore = defineStore("employee", () => {
   let eventSource = null;
 
   const fetchEmployees = async () => {
-    const res = await axios.get(API);
-    employees.value = res.data;
+    try {
+      const res = await axios.get(API);
+      employees.value = res.data;
+      await saveToCache("employees", res.data);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      // Try to load from cache
+      const cached = await getFromCache("employees");
+      if (cached && cached.length) {
+        employees.value = cached;
+        console.log("Loaded employees from cache");
+      }
+    }
   };
 
   const startRealTimeUpdates = () => {
@@ -78,6 +90,15 @@ export const useEmployeeStore = defineStore("employee", () => {
     // Real-time update will be handled by SSE
   };
 
+  // Add this function to allow manual cache loading for offline mode
+  const loadEmployeesFromCache = async () => {
+    const cached = await getFromCache("employees");
+    if (cached && cached.length) {
+      employees.value = cached;
+      console.log("Loaded employees from cache (manual trigger)");
+    }
+  };
+
   return {
     employees,
     fetchEmployees,
@@ -86,5 +107,6 @@ export const useEmployeeStore = defineStore("employee", () => {
     deleteEmployee,
     startRealTimeUpdates,
     stopRealTimeUpdates,
+    loadEmployeesFromCache, // expose for UI
   };
 });

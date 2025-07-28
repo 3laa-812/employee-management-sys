@@ -2,6 +2,10 @@
   <div class="departments">
     <h2>Departments</h2>
 
+    <button @click="loadFromCache" style="margin:   1rem 0; background-color: var(--bg-secondary);">
+      Load from Offline Cache
+    </button>
+
     <!-- Filters -->
     <div class="filters">
       <input v-model="search" placeholder="Search by name" />
@@ -13,13 +17,47 @@
         </option>
       </select>
 
-      <button @click="openModal()">+ Add Department</button>
+      <button @click="openModal()" style="background-color: var(--bg-secondary);">Add Department</button>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div v-if="selectedDepartments.length > 0" class="bulk-actions">
+      <h4>Bulk Actions ({{ selectedDepartments.length }} selected)</h4>
+      <div class="bulk-controls">
+        <select v-model="bulkTargetCompany">
+          <option value="">Select Company</option>
+          <option v-for="c in companies" :key="c.id" :value="c.id">
+            {{ c.name }}
+          </option>
+        </select>
+        <button
+          @click="bulkAssign"
+          :disabled="!bulkTargetCompany"
+          class="bulk-btn assign"
+        >
+          Assign to Company
+        </button>
+        <button @click="bulkUnassign" class="bulk-btn unassign">
+          Unassign (Set to No Company)
+        </button>
+        <button @click="clearSelection" class="bulk-btn clear">
+          Clear Selection
+        </button>
+      </div>
     </div>
 
     <!-- Drag and Drop Table -->
     <table>
       <thead>
         <tr>
+          <th>
+            <input
+              type="checkbox"
+              @change="toggleSelectAll"
+              :checked="isAllSelected"
+              :indeterminate="isPartiallySelected"
+            />
+          </th>
           <th>Name</th>
           <th>Company</th>
           <th>Head</th>
@@ -34,6 +72,13 @@
       >
         <template #item="{ element }">
           <tr>
+            <td>
+              <input
+                type="checkbox"
+                :value="element.id"
+                v-model="selectedDepartments"
+              />
+            </td>
             <td>
               <input v-model="element.name" @blur="updateDepartment(element)" />
             </td>
@@ -109,6 +154,8 @@ const search = ref("");
 const selectedCompany = ref("");
 const modalOpen = ref(false);
 const editing = ref(false);
+const selectedDepartments = ref([]);
+const bulkTargetCompany = ref("");
 
 const form = ref({
   id: null,
@@ -150,6 +197,83 @@ onMounted(async () => {
   await companyStore.fetchCompanies();
   await employeeStore.fetchEmployees();
 });
+
+// Bulk selection logic
+const isAllSelected = computed(() => {
+  return (
+    filteredDepartments.value.length > 0 &&
+    selectedDepartments.value.length === filteredDepartments.value.length
+  );
+});
+
+const isPartiallySelected = computed(() => {
+  return (
+    selectedDepartments.value.length > 0 &&
+    selectedDepartments.value.length < filteredDepartments.value.length
+  );
+});
+
+function toggleSelectAll(event) {
+  if (event.target.checked) {
+    selectedDepartments.value = filteredDepartments.value.map((d) => d.id);
+  } else {
+    selectedDepartments.value = [];
+  }
+}
+
+function clearSelection() {
+  selectedDepartments.value = [];
+  bulkTargetCompany.value = "";
+}
+
+async function bulkAssign() {
+  if (!bulkTargetCompany.value || selectedDepartments.value.length === 0) {
+    alert("Please select a company and departments to assign.");
+    return;
+  }
+
+  if (
+    confirm(
+      `Assign ${selectedDepartments.value.length} departments to the selected company?`
+    )
+  ) {
+    try {
+      await departmentStore.bulkUpdateCompany(
+        selectedDepartments.value,
+        bulkTargetCompany.value
+      );
+      await departmentStore.fetchDepartments();
+      clearSelection();
+      alert("Departments assigned successfully!");
+    } catch (error) {
+      console.error("Error in bulk assign:", error);
+      alert("Error assigning departments. Please try again.");
+    }
+  }
+}
+
+async function bulkUnassign() {
+  if (selectedDepartments.value.length === 0) {
+    alert("Please select departments to unassign.");
+    return;
+  }
+
+  if (
+    confirm(
+      `Unassign ${selectedDepartments.value.length} departments from their current companies?`
+    )
+  ) {
+    try {
+      await departmentStore.bulkUpdateCompany(selectedDepartments.value, null);
+      await departmentStore.fetchDepartments();
+      clearSelection();
+      alert("Departments unassigned successfully!");
+    } catch (error) {
+      console.error("Error in bulk unassign:", error);
+      alert("Error unassigning departments. Please try again.");
+    }
+  }
+}
 
 function openModal() {
   editing.value = false;
@@ -199,6 +323,10 @@ async function onReorder() {
     await departmentStore.updateDepartment({ ...dep, order: i + 1 });
   }
 }
+
+function loadFromCache() {
+  departmentStore.loadDepartmentsFromCache();
+}
 </script>
 
 <style scoped>
@@ -208,6 +336,67 @@ async function onReorder() {
   margin-bottom: 1rem;
 }
 
+.bulk-actions {
+  background: var(--bg-secondary);
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.bulk-actions h4 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-primary);
+}
+
+.bulk-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.bulk-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.bulk-btn.assign {
+  background: #456882;
+  color: var(--text-primary);
+}
+
+.bulk-btn.assign:hover {
+  background: #1b3c53;
+}
+
+.bulk-btn.unassign {
+  background: #d2c1b6;
+  color: var(--text-primary);
+}
+
+.bulk-btn.unassign:hover {
+  background: #b8a99e;
+}
+
+.bulk-btn.clear {
+  background: #6c757d;
+  color: var(--text-primary);
+}
+
+.bulk-btn.clear:hover {
+  background: #5a6268;
+}
+
+.bulk-btn:disabled {
+  background: #6c757d;
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -215,12 +404,15 @@ table {
 th,
 td {
   padding: 0.5rem;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
 .modal {
   margin-top: 1rem;
-  background: #eee;
+  background: var(--bg-secondary);
   padding: 1rem;
-  border: 1px solid #666;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
 </style>

@@ -2,6 +2,10 @@
   <div class="employees">
     <h2>Employees</h2>
 
+    <button @click="loadFromCache" style="margin-bottom: 1rem; background-color: var(--bg-secondary); margin-top: 1rem;">
+      Load from Offline Cache
+    </button>
+
     <!-- Filters -->
     <div class="filters">
       <input v-model="search" placeholder="Search by name" />
@@ -20,9 +24,9 @@
         <option value="Resigned">Resigned</option>
       </select>
 
-      <button @click="openModal()">+ Add Employee</button>
+      <button @click="openModal()" style="background-color: var(--bg-secondary);">Add Employee</button>
       <div class="actions">
-        <button @click="goToWizard">+ Add Employee (Wizard)</button>
+        <button @click="goToWizard"> (Wizard)</button>
       </div>
 
       <input
@@ -33,58 +37,97 @@
       />
     </div>
 
-    <!-- Table -->
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Email</th>
-          <th>Department</th>
-          <th>Role</th>
-          <th>Status</th>
-          <th>Hire Date</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="emp in filteredEmployees" :key="emp.id">
-          <td>
-            <input v-model="emp.name" @blur="updateEmployee(emp)" />
-          </td>
-          <td>
-            <input
-              v-model="emp.email"
-              @blur="updateEmployee(emp)"
-              type="email"
-            />
-          </td>
-          <td>
-            <select v-model="emp.departmentId" @change="updateEmployee(emp)">
-              <option v-for="d in departments" :key="d.id" :value="d.id">
-                {{ d.name }}
-              </option>
-            </select>
-          </td>
-          <td>
-            <input v-model="emp.role" @blur="updateEmployee(emp)" />
-          </td>
-          <td>
-            <select v-model="emp.status" @change="updateEmployee(emp)">
-              <option value="Active">Active</option>
-              <option value="Suspended">Suspended</option>
-              <option value="On Leave">On Leave</option>
-              <option value="Resigned">Resigned</option>
-            </select>
-          </td>
-          <td>{{ formatDate(emp.hireDate) }}</td>
-          <td>
-            <button @click="editEmployee(emp)">Edit</button>
-            <button @click="deleteEmployee(emp.id)">Delete</button>
-            <button @click="goToTimeline(emp.id)">Timeline</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
+    <!-- Virtualized Table -->
+    <div class="virtualized-table">
+      <!-- Table Header -->
+      <div class="table-header">
+        <div class="header-cell">Name</div>
+        <div class="header-cell">Email</div>
+        <div class="header-cell">Department</div>
+        <div class="header-cell">Role</div>
+        <div class="header-cell">Status</div>
+        <div class="header-cell">Hire Date</div>
+        <div class="header-cell">Actions</div>
+      </div>
+
+      <!-- Virtualized List -->
+      <div ref="scrollContainer" class="table-body" @scroll="handleScroll">
+        <div
+          class="virtual-spacer"
+          :style="{ height: totalHeight + 'px' }"
+        ></div>
+        <div
+          class="virtual-content"
+          :style="{ transform: `translateY(${offsetY}px)` }"
+        >
+          <div
+            v-for="(emp, index) in visibleEmployees"
+            :key="emp.id"
+            class="table-row"
+          >
+            <div class="table-cell">
+              <input
+                v-model="emp.name"
+                @blur="updateEmployee(emp)"
+                class="cell-input"
+              />
+            </div>
+            <div class="table-cell">
+              <input
+                v-model="emp.email"
+                @blur="updateEmployee(emp)"
+                type="email"
+                class="cell-input"
+              />
+            </div>
+            <div class="table-cell">
+              <select
+                v-model="emp.departmentId"
+                @change="updateEmployee(emp)"
+                class="cell-select"
+              >
+                <option v-for="d in departments" :key="d.id" :value="d.id">
+                  {{ d.name }}
+                </option>
+              </select>
+            </div>
+            <div class="table-cell">
+              <input
+                v-model="emp.role"
+                @blur="updateEmployee(emp)"
+                class="cell-input"
+              />
+            </div>
+            <div class="table-cell">
+              <select
+                v-model="emp.status"
+                @change="updateEmployee(emp)"
+                class="cell-select"
+              >
+                <option value="Active">Active</option>
+                <option value="Suspended">Suspended</option>
+                <option value="On Leave">On Leave</option>
+                <option value="Resigned">Resigned</option>
+              </select>
+            </div>
+            <div class="table-cell">
+              {{ formatDate(emp.hireDate) }}
+            </div>
+            <div class="table-cell actions-cell">
+              <button @click="editEmployee(emp)" class="action-btn">
+                Edit
+              </button>
+              <button @click="deleteEmployee(emp.id)" class="action-btn">
+                Delete
+              </button>
+              <button @click="goToTimeline(emp.id)" class="action-btn">
+                Timeline
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Modal -->
     <div v-if="modalOpen" class="modal">
@@ -122,10 +165,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, nextTick } from "vue";
 import { useEmployeeStore } from "../stores/employee";
 import { useDepartmentStore } from "../stores/department";
 import { useRouter } from "vue-router";
+
 const router = useRouter();
 
 const employeeStore = useEmployeeStore();
@@ -136,6 +180,9 @@ const selectedDepartment = ref("");
 const selectedStatus = ref("");
 const modalOpen = ref(false);
 const editing = ref(false);
+const scrollContainer = ref(null);
+const scrollTop = ref(0);
+
 const form = ref({
   id: null,
   name: "",
@@ -146,10 +193,21 @@ const form = ref({
   hireDate: "",
 });
 
+// Virtual scrolling constants
+const ROW_HEIGHT = 60;
+const BUFFER_SIZE = 5;
+const VISIBLE_ROWS = 10;
+
 onMounted(async () => {
   await employeeStore.fetchEmployees();
   await departmentStore.fetchDepartments();
   employeeStore.startRealTimeUpdates();
+
+  // Initialize scroll position
+  await nextTick();
+  if (scrollContainer.value) {
+    scrollContainer.value.scrollTop = 0;
+  }
 });
 
 onUnmounted(() => {
@@ -159,6 +217,7 @@ onUnmounted(() => {
 function goToWizard() {
   router.push("/onboard");
 }
+
 function goToTimeline(id) {
   router.push(`/dashboard/employees/${id}/timeline`);
 }
@@ -182,6 +241,30 @@ const filteredEmployees = computed(() => {
     return (matchesName || matchesEmail) && matchesDept && matchesStatus;
   });
 });
+
+// Virtual scrolling calculations
+const totalHeight = computed(() => filteredEmployees.value.length * ROW_HEIGHT);
+
+const startIndex = computed(() => {
+  const start = Math.floor(scrollTop.value / ROW_HEIGHT) - BUFFER_SIZE;
+  return Math.max(0, start);
+});
+
+const endIndex = computed(() => {
+  const end =
+    Math.floor(scrollTop.value / ROW_HEIGHT) + VISIBLE_ROWS + BUFFER_SIZE;
+  return Math.min(filteredEmployees.value.length, end);
+});
+
+const visibleEmployees = computed(() => {
+  return filteredEmployees.value.slice(startIndex.value, endIndex.value);
+});
+
+const offsetY = computed(() => startIndex.value * ROW_HEIGHT);
+
+function handleScroll(event) {
+  scrollTop.value = event.target.scrollTop;
+}
 
 function openModal() {
   editing.value = false;
@@ -227,6 +310,7 @@ async function deleteEmployee(id) {
     await employeeStore.fetchEmployees();
   }
 }
+
 function exportEmployees() {
   const data = employees.value;
 
@@ -297,6 +381,10 @@ function formatDate(dateString) {
   const date = new Date(dateString);
   return date.toLocaleDateString();
 }
+
+function loadFromCache() {
+  employeeStore.loadEmployeesFromCache();
+}
 </script>
 
 <style scoped>
@@ -304,30 +392,136 @@ function formatDate(dateString) {
   display: flex;
   gap: 1rem;
   margin-bottom: 1rem;
+  height: 4rem;
 }
 
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-th,
-td {
-  padding: 0.5rem;
+.virtualized-table {
   border: 1px solid #ccc;
+  border-radius: 4px;
+  overflow: hidden;
 }
+
+.table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  background: var(--bg-secondary);
+  font-weight: bold;
+  border-bottom: 2px solid #dee2e6;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-cell {
+  padding: 0.75rem 0.5rem;
+  border-right: 1px solid #dee2e6;
+}
+
+.header-cell:last-child {
+  border-right: none;
+}
+
+.table-body {
+  height: 400px;
+  overflow-y: auto;
+  position: relative;
+}
+
+.virtual-spacer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.virtual-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  align-items: center;
+  height: 60px;
+  box-sizing: border-box;
+}
+
+.table-row:hover {
+  background-color: var(--bg-secondary);
+}
+
+.table-cell {
+  padding: 0.25rem;
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+}
+
+.table-cell:last-child {
+  border-right: none;
+}
+
+.cell-input,
+.cell-select {
+  width: 100%;
+  padding: 0.25rem;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  font-size: 0.9rem;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.cell-input:focus,
+.cell-select:focus {
+  outline: none;
+  border-color: #456882;
+  box-shadow: 0 0 0 2px rgba(69, 104, 130, 0.25);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.action-btn {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover {
+  background: var(--bg-secondary);
+  border-color: #456882;
+}
+
 .modal {
   margin-top: 1rem;
-  background: #eee;
+  background: var(--bg-secondary);
   padding: 1rem;
-  border: 1px solid #666;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
 }
+
 .actions {
   margin-bottom: 1rem;
 }
+
 .actions button {
   padding: 0.5rem 1rem;
-  background-color: #4caf50;
-  color: white;
+  background-color: #456882;
+  color: var(--text-primary);
   border: none;
   cursor: pointer;
 }
